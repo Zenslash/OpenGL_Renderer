@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "6b409e32-e807-4307-960a-58630a8a7b18": {
+      "ProjectGuid": "6b409e32-e807-4307-960a-58630a8a7b18",
+      "DisplayName": "OpenGLRenderer",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}
