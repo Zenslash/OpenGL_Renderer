@@ -19,6 +19,9 @@
     <Filter Include="Thirdparty\GLAD">
       <UniqueIdentifier>{b7197143-6873-4d8f-8c40-a44c6c1a4155}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{5cd8ae32-0b0c-44a5-917f-de6d06e36857}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -27,5 +30,21 @@
     <ClCompile Include="..\Thirdparty\glad\src\glad.c">
       <Filter>Thirdparty\GLAD</Filter>
     </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Colored.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Colored.vs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
