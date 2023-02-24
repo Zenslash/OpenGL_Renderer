@@ -79,7 +79,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>E:\CG\Projects\OpenGL_Renderer\OpenGLRenderer\Thirdparty\GLFW\lib-vc2022;$(LibraryPath)</LibraryPath>
-    <IncludePath>E:\CG\Projects\OpenGL_Renderer\OpenGLRenderer\Thirdparty\glad\include;E:\CG\Projects\OpenGL_Renderer\OpenGLRenderer\Thirdparty\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>E:\CG\Projects\OpenGL_Renderer\OpenGLRenderer\Thirdparty\glm;E:\CG\Projects\OpenGL_Renderer\OpenGLRenderer\Thirdparty\glad\include;E:\CG\Projects\OpenGL_Renderer\OpenGLRenderer\Thirdparty\GLFW\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,9 +147,11 @@
     <ClCompile Include="..\Thirdparty\glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Colored.fs" />

@@ -1,9 +1,13 @@
 #version 330 core
+
 out vec4 FragColor;
 in vec3 ourColor;
-in vec4 ourPos;
+in vec2 texCoord;
+
+uniform sampler2D albedo;
+uniform sampler2D decal;
 
 void main()
 {
-    FragColor = vec4(ourPos.xyz, 1.0);
+    FragColor = texture(albedo, texCoord) + texture(decal, texCoord) * 0.4f;
 }
