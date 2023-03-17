@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "stb_image.h"
+#include "Camera.h"
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -13,12 +14,50 @@ void framebuffer_size_callback(GLFWwindow* wnd, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
-void process_input(GLFWwindow* wnd)
+void process_input(GLFWwindow* wnd, Camera* camera, float deltatTime)
 {
 	if(glfwGetKey(wnd, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(wnd, true);
 	}
+	if (glfwGetKey(wnd, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		camera->ProcessMovementInput(Camera_Movement::FORWARD, deltatTime);
+	}
+	if (glfwGetKey(wnd, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		camera->ProcessMovementInput(Camera_Movement::BACKWARD, deltatTime);
+	}
+	if (glfwGetKey(wnd, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		camera->ProcessMovementInput(Camera_Movement::RIGHT, deltatTime);
+	}
+	if (glfwGetKey(wnd, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		camera->ProcessMovementInput(Camera_Movement::LEFT, deltatTime);
+	}
+}
+
+float lastX = 400;
+float lastY = 300;
+bool firstMouseInput = true;
+Camera camera;
+
+void mouse_callback(GLFWwindow* wnd, double xpos, double ypos)
+{
+	if (firstMouseInput)
+	{
+		firstMouseInput = false;
+		lastX = xpos;
+		lastY = ypos;
+	}
+
+	float xOffset = xpos - lastX;
+	float yOffset = ypos - lastY;
+	lastX = xpos;
+	lastY = ypos;
+
+	camera.ProcessMouseMovement(xOffset, yOffset);
 }
 
 int main()
@@ -50,6 +89,7 @@ int main()
 	//Setup viewport
 	glViewport(0, 0, width, height);
 	glfwSetFramebufferSizeCallback(wnd, framebuffer_size_callback);
+	glfwSetCursorPosCallback(wnd, mouse_callback);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -201,11 +241,25 @@ int main()
 	shader.setInt("albedo", 0);
 	shader.setInt("decal", 1);
 
+	//Camera stuff
+	glm::vec3 up = glm::vec3(0.0, 1.0f, 0.0f);
+	
+
+	//Timer stuff
+	float deltaTime = 0.0f;
+	float lastFrame = 0.0f;
+
+	glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
 	{
-		process_input(wnd);
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		process_input(wnd, &camera, deltaTime);
 
 		//Rendering here
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -213,14 +267,11 @@ int main()
 
 		shader.use();
 
-		glm::mat4 view = glm::mat4(1.0f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -4.0f));
-
 		glm::mat4 projection = glm::mat4(1.0f);
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
 		
-		shader.setMat4("view", view);
+		shader.setMat4("view", camera.GetViewMatrix());
 		shader.setMat4("projection", projection);
 
 		// 4. use our shader program when we want to render an object
