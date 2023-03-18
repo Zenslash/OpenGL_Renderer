@@ -235,11 +235,19 @@ int main()
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
-	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 lightAmbient = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 lightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 lightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
 
+	//Uniform vars
 	litShader.use();
-	litShader.setVec3("_ObjectColor", 1.0f, 0.5f, 0.31f);
-	litShader.setVec3("_LightColor", lightColor);
+	litShader.setVec3("_Material.ambient", 1.0f, 0.5f, 0.31f);
+	litShader.setVec3("_Material.diffuse", 1.0f, 0.5f, 0.31f);
+	litShader.setVec3("_Material.specular", 0.5f, 0.5f, 0.5f);
+	litShader.setFloat("_Material.shiness", 32.0f);
+	litShader.setVec3("_Light.ambient", lightAmbient);
+	litShader.setVec3("_Light.diffuse", lightDiffuse);
+	litShader.setVec3("_Light.specular", lightSpecular);
 	litShader.setInt("albedo", 0);
 
 	//Camera stuff
@@ -285,7 +293,7 @@ int main()
 		lightSrcShader.use();
 		lightSrcShader.setMat4("view", camera.GetViewMatrix());
 		lightSrcShader.setMat4("projection", projection);
-		lightSrcShader.setVec3("_LightColor", lightColor);
+		lightSrcShader.setVec3("_LightColor", lightDiffuse);
 
 		glm::mat4 lightModel = glm::mat4(1.0f);
 		lightModel = glm::rotate(lightModel, glm::radians((float)sin(glfwGetTime()) * 120.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -301,9 +309,11 @@ int main()
 		
 		litShader.setMat4("view", camera.GetViewMatrix());
 		litShader.setMat4("projection", projection);
-		litShader.setVec3("_LightPos", lightModel * glm::vec4(lightPos, 1.0));
 		litShader.setVec3("_ViewPos", camera.cameraPos);
-		litShader.setVec3("_LightColor", lightColor);
+		litShader.setVec3("_Light.position", lightModel * glm::vec4(lightPos, 1.0));
+		litShader.setVec3("_Light.ambient", lightAmbient);
+		litShader.setVec3("_Light.diffuse", lightDiffuse);
+		litShader.setVec3("_Light.specular", lightSpecular);
 
 		// 4. use our shader program when we want to render an object
 		glActiveTexture(GL_TEXTURE0);
@@ -324,7 +334,9 @@ int main()
 		ImGui::End();
 
 		ImGui::Begin("Directional light");
-		ImGui::ColorEdit3("Color", glm::value_ptr(lightColor));
+		ImGui::ColorEdit3("Ambient", glm::value_ptr(lightAmbient));
+		ImGui::ColorEdit3("Diffuse", glm::value_ptr(lightDiffuse));
+		ImGui::ColorEdit3("Specular", glm::value_ptr(lightSpecular));
 		ImGui::End();
 
 		ImGui::Render();
