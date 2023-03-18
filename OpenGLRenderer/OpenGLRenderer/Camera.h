@@ -50,6 +50,9 @@ public:
 
 	void ProcessMovementInput(Camera_Movement direction, float deltaTime)
 	{
+		//FPS style movements
+		//glm::vec3 worldFront = glm::normalize(glm::cross(worldUp, cameraRight));
+
 		switch (direction)
 		{
 		case FORWARD:
