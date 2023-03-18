@@ -1,3 +1,7 @@
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 
 #include <glad/glad.h>
 #include "Shader.h"
@@ -14,6 +18,8 @@ void framebuffer_size_callback(GLFWwindow* wnd, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
+
+bool cursorDisabled = false;
 void process_input(GLFWwindow* wnd, Camera* camera, float deltatTime)
 {
 	if(glfwGetKey(wnd, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -36,6 +42,19 @@ void process_input(GLFWwindow* wnd, Camera* camera, float deltatTime)
 	{
 		camera->ProcessMovementInput(Camera_Movement::LEFT, deltatTime);
 	}
+	if (glfwGetKey(wnd, GLFW_KEY_TAB) == GLFW_PRESS)
+	{
+		if (cursorDisabled)
+		{
+			glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+		else
+		{
+			glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+
+		cursorDisabled = !cursorDisabled;
+	}
 }
 
 float lastX = 400;
@@ -50,6 +69,13 @@ void mouse_callback(GLFWwindow* wnd, double xpos, double ypos)
 		firstMouseInput = false;
 		lastX = xpos;
 		lastY = ypos;
+	}
+
+	if (!cursorDisabled)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		return;
 	}
 
 	float xOffset = xpos - lastX;
@@ -209,10 +235,11 @@ int main()
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
+	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	litShader.use();
 	litShader.setVec3("_ObjectColor", 1.0f, 0.5f, 0.31f);
-	litShader.setVec3("_LightColor", 1.0f, 1.0f, 1.0f);
+	litShader.setVec3("_LightColor", lightColor);
 	litShader.setInt("albedo", 0);
 
 	//Camera stuff
@@ -223,8 +250,13 @@ int main()
 	float deltaTime = 0.0f;
 	float lastFrame = 0.0f;
 
-	glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+	//Imgui setup
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(wnd, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
 
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
@@ -239,6 +271,11 @@ int main()
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		//Imgui
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
 		//Render light source
 		glm::mat4 projection = glm::mat4(1.0f);
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
@@ -248,7 +285,7 @@ int main()
 		lightSrcShader.use();
 		lightSrcShader.setMat4("view", camera.GetViewMatrix());
 		lightSrcShader.setMat4("projection", projection);
-		lightSrcShader.setVec3("_LightColor", 1.0f, 1.0f, 1.0f);
+		lightSrcShader.setVec3("_LightColor", lightColor);
 
 		glm::mat4 lightModel = glm::mat4(1.0f);
 		lightModel = glm::rotate(lightModel, glm::radians((float)sin(glfwGetTime()) * 120.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -266,6 +303,7 @@ int main()
 		litShader.setMat4("projection", projection);
 		litShader.setVec3("_LightPos", lightModel * glm::vec4(lightPos, 1.0));
 		litShader.setVec3("_ViewPos", camera.cameraPos);
+		litShader.setVec3("_LightColor", lightColor);
 
 		// 4. use our shader program when we want to render an object
 		glActiveTexture(GL_TEXTURE0);
@@ -280,10 +318,25 @@ int main()
 
 		////////////
 
+		//ImGui
+		ImGui::Begin("Perfomance stats");
+		ImGui::Text((std::string("Delta Time: ") + std::to_string(deltaTime)).c_str());
+		ImGui::End();
+
+		ImGui::Begin("Directional light");
+		ImGui::ColorEdit3("Color", glm::value_ptr(lightColor));
+		ImGui::End();
+
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(wnd);
 		glfwPollEvents();
 	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteVertexArrays(1, &LightVAO);
