@@ -228,6 +228,9 @@ int main()
 	litShader.setVec3("_Light.ambient", lightAmbient);
 	litShader.setVec3("_Light.diffuse", lightDiffuse);
 	litShader.setVec3("_Light.specular", lightSpecular);
+	litShader.setFloat("_Light.constant", 1.0f);
+	litShader.setFloat("_Light.linear", 0.09f);
+	litShader.setFloat("_Light.quadratic", 0.032f);
 	litShader.setInt("albedo", 0);
 
 	//Camera stuff
@@ -276,7 +279,6 @@ int main()
 		lightSrcShader.setVec3("_LightColor", lightDiffuse);
 
 		glm::mat4 lightModel = glm::mat4(1.0f);
-		lightModel = glm::rotate(lightModel, glm::radians((float)sin(glfwGetTime()) * 120.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		lightModel = glm::translate(lightModel, lightPos);
 		
 
@@ -297,6 +299,7 @@ int main()
 		litShader.setMat4("projection", projection);
 		litShader.setVec3("_ViewPos", camera.cameraPos);
 		litShader.setVec3("_Light.position", lightModel * glm::vec4(lightPos, 1.0));
+		litShader.setVec3("_Light.direction", -0.2f, -1.0f, -0.3f);
 		litShader.setVec3("_Light.ambient", lightAmbient);
 		litShader.setVec3("_Light.diffuse", lightDiffuse);
 		litShader.setVec3("_Light.specular", lightSpecular);
@@ -324,6 +327,7 @@ int main()
 		ImGui::ColorEdit3("Ambient", glm::value_ptr(lightAmbient));
 		ImGui::ColorEdit3("Diffuse", glm::value_ptr(lightDiffuse));
 		ImGui::ColorEdit3("Specular", glm::value_ptr(lightSpecular));
+		ImGui::InputFloat3("Position", glm::value_ptr(lightPos));
 		ImGui::End();
 
 		ImGui::Render();
