@@ -9,6 +9,8 @@
 #include <iostream>
 #include "stb_image.h"
 #include "Camera.h"
+#include "Model.h"
+#include <filesystem>
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -208,10 +210,6 @@ int main()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	//Configure textures
-	//TODO Create Texture class
-	unsigned int texID = loadTexture("E:/CG/Projects/OpenGL_Renderer/OpenGLRenderer/Resources/Textures/stone_albedo.jpg");
-	unsigned int specularTexID = loadTexture("E:/CG/Projects/OpenGL_Renderer/OpenGLRenderer/Resources/Textures/stone_ao.jpg");
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
@@ -227,24 +225,15 @@ int main()
 	glm::vec3(0.0f,  0.0f, -3.0f)
 	};
 
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
-	};
+	const std::filesystem::path workDir = std::filesystem::current_path();
+	const std::filesystem::path modelPath = workDir / "resources" / "models" / "backpack" / "backpack.obj";
+	Model model(modelPath.generic_string().c_str());
 
 	//Uniform vars
 	litShader.use();
 	litShader.setVec3("_Material.ambient", 0.2f, 0.2f, 0.2f);
-	litShader.setVec3("_Material.diffuse", 1.0f, 1.0f, 1.0f);
-	litShader.setVec3("_Material.specular", 0.5f, 0.5f, 0.5f);
+	litShader.setVec3("_Material.texture_diffuse1", 1.0f, 1.0f, 1.0f);
+	litShader.setVec3("_Material.texture_specular1", 0.5f, 0.5f, 0.5f);
 	litShader.setFloat("_Material.shiness", 32.0f);
 	litShader.setFloat("_PointLights[0].constant", 1.0f);
 	litShader.setFloat("_PointLights[0].linear", 0.09f);
@@ -354,12 +343,6 @@ int main()
 
 		//Render cube
 		litShader.use();
-		
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texID);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, specularTexID);
 
 		litShader.setMat4("view", camera.GetViewMatrix());
 		litShader.setMat4("projection", projection);
@@ -381,15 +364,10 @@ int main()
 
 		// 4. use our shader program when we want to render an object
 
-		glBindVertexArray(VAO);
-		for (int i = 0; i < 10; i++)
-		{
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubePositions[i]);
-
-			litShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		glm::mat4 local = glm::mat4(1.0f);
+		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		litShader.setMat4("model", local);
+		model.Draw(litShader);
 
 		////////////
 
