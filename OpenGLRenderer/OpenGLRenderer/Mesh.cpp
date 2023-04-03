@@ -9,6 +9,13 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 	setupMesh();
 }
 
+void Mesh::ClearData()
+{
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
+}
+
 void Mesh::Draw(Shader& shader)
 {
 	unsigned int diffuseNr = 1;

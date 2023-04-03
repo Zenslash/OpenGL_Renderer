@@ -121,95 +121,18 @@ int main()
 	glfwSetFramebufferSizeCallback(wnd, framebuffer_size_callback);
 	glfwSetCursorPosCallback(wnd, mouse_callback);
 
+	//Configuring depth buffer
 	glEnable(GL_DEPTH_TEST);
-
-	//TODO Load custom models
-	float vertices[] = {
-		// positions          // normals           // texture coords
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
-
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
-	};
-
-	//Gen buffers
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-
-	unsigned int VAO, LightVAO;
-	glGenVertexArrays(1, &VAO);
-	glGenVertexArrays(1, &LightVAO);
-
-	//unsigned int EBO;
-	//glGenBuffers(1, &EBO);
+	glDepthFunc(GL_LESS);
+	
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_EQUAL, 1, 0xFF);
+	
 
 	//Compile shaders
 	Shader litShader("Shaders/SimpleLit.vs", "Shaders/SimpleLit.fs");
 	Shader lightSrcShader("Shaders/LightSource.vs", "Shaders/LightSource.fs");
-
-	//Bind buffers
-	// 1. bind VAO
-	glBindVertexArray(VAO);
-
-	// 2. copy our vertices array in a buffer for OpenGL to use
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
-
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	// 3. then set the vertex attributes pointers
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	//Configuring light
-	glBindVertexArray(LightVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
+	Shader singleColor("Shaders/SingleColor.vs", "Shaders/SingleColor.fs");
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
@@ -226,8 +149,11 @@ int main()
 	};
 
 	const std::filesystem::path workDir = std::filesystem::current_path();
-	const std::filesystem::path modelPath = workDir / "resources" / "models" / "backpack" / "backpack.obj";
+	std::filesystem::path modelPath = workDir / "resources" / "models" / "backpack" / "backpack.obj";
 	Model model(modelPath.generic_string().c_str());
+
+	/*modelPath = workDir / "resources" / "models" / "light" / "light.fbx";
+	Model pointLight(modelPath.generic_string().c_str());*/
 
 	//Uniform vars
 	litShader.use();
@@ -235,7 +161,7 @@ int main()
 	litShader.setVec3("_Material.texture_diffuse1", 1.0f, 1.0f, 1.0f);
 	litShader.setVec3("_Material.texture_specular1", 0.5f, 0.5f, 0.5f);
 	litShader.setFloat("_Material.shiness", 32.0f);
-	litShader.setFloat("_PointLights[0].constant", 1.0f);
+	/*litShader.setFloat("_PointLights[0].constant", 1.0f);
 	litShader.setFloat("_PointLights[0].linear", 0.09f);
 	litShader.setFloat("_PointLights[0].quadratic", 0.032f);
 	litShader.setVec3("_PointLights[0].position", pointLightPositions[0]);
@@ -269,11 +195,10 @@ int main()
 	litShader.setVec3("_PointLights[3].ambient", lightAmbient);
 	litShader.setVec3("_PointLights[3].diffuse", lightDiffuse);
 	litShader.setVec3("_PointLights[3].specular", lightSpecular);
-	litShader.setFloat("_PointLights[3].intensity", lightIntensity);
+	litShader.setFloat("_PointLights[3].intensity", lightIntensity);*/
 	litShader.setInt("albedo", 0);
 
 	//Spot light
-	//TODO Fix spot light problem
 	litShader.setVec3("_SpotLight.position", camera.cameraPos);
 	litShader.setVec3("_SpotLight.direction", camera.cameraFront);
 	litShader.setFloat("_SpotLight.cutOff", glm::cos(glm::radians(12.5f)));
@@ -286,7 +211,6 @@ int main()
 	//Camera stuff
 	glm::vec3 up = glm::vec3(0.0, 1.0f, 0.0f);
 	
-
 	//Timer stuff
 	float deltaTime = 0.0f;
 	float lastFrame = 0.0f;
@@ -310,7 +234,7 @@ int main()
 
 		//Rendering here
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		//Imgui
 		ImGui_ImplOpenGL3_NewFrame();
@@ -321,27 +245,23 @@ int main()
 		glm::mat4 projection = glm::mat4(1.0f);
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
-		glBindVertexArray(LightVAO);
-
 		lightSrcShader.use();
 		lightSrcShader.setMat4("view", camera.GetViewMatrix());
 		lightSrcShader.setMat4("projection", projection);
 		lightSrcShader.setVec3("_LightColor", lightDiffuse);
 
 
-		for (int i = 0; i < 4; i++)
+		/*for (int i = 0; i < 4; i++)
 		{
 			glm::mat4 lightModel = glm::mat4(1.0f);
 			lightModel = glm::translate(lightModel, pointLightPositions[i]);
 			lightModel = glm::scale(lightModel, glm::vec3(0.5f, 0.5f, 0.5f));
 
 			lightSrcShader.setMat4("model", lightModel);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+			pointLight.Draw(lightSrcShader);
+		}*/
 		
-
-
-		//Render cube
+		//Render models
 		litShader.use();
 
 		litShader.setMat4("view", camera.GetViewMatrix());
@@ -364,10 +284,51 @@ int main()
 
 		// 4. use our shader program when we want to render an object
 
+		//First pass
+		glEnable(GL_DEPTH_TEST);
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
 		glm::mat4 local = glm::mat4(1.0f);
 		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		litShader.setMat4("model", local);
 		model.Draw(litShader);
+
+		local = glm::mat4(1.0f);
+		local = glm::translate(local, glm::vec3(4.0f, 0.0f, 0.0f));
+		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		litShader.setMat4("model", local);
+		model.Draw(litShader);
+
+		////Second pass
+		singleColor.use();
+
+		singleColor.setMat4("view", camera.GetViewMatrix());
+		singleColor.setMat4("projection", projection);
+
+		glDisable(GL_DEPTH_TEST);
+		glStencilMask(0x00);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+
+		singleColor.setVec3("_Color", glm::vec3(0.5f, 0.8f, 1.0f));
+
+		local = glm::mat4(1.0f);
+		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		local = glm::scale(local, glm::vec3(1.1f, 1.1f, 1.1f));
+		singleColor.setMat4("model", local);
+		model.Draw(singleColor);
+
+		local = glm::mat4(1.0f);
+		local = glm::translate(local, glm::vec3(4.0f, 0.0f, 0.0f));
+		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		local = glm::scale(local, glm::vec3(1.1f, 1.1f, 1.1f));
+		singleColor.setMat4("model", local);
+		model.Draw(singleColor);
+
+		glEnable(GL_DEPTH_TEST);
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 
 		////////////
 
@@ -394,43 +355,6 @@ int main()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteVertexArrays(1, &LightVAO);
-	glDeleteBuffers(1, &VBO);
-
 	glfwTerminate();
 	return 0;
-}
-
-unsigned int loadTexture(const char* path)
-{
-	unsigned int texID;
-
-	glGenTextures(1, &texID);
-	glBindTexture(GL_TEXTURE_2D, texID);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	stbi_set_flip_vertically_on_load(true);
-
-	int tWidth, tHeight, nrChannels;
-	unsigned char* texData = stbi_load(path,
-		&tWidth, &tHeight, &nrChannels, 0);
-
-	if (texData != nullptr)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tWidth, tHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cerr << "Failed to load texture!" << std::endl;
-	}
-
-	stbi_image_free(texData);
-	return texID;
 }

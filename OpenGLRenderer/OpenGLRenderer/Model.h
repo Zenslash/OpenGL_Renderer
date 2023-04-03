@@ -17,6 +17,13 @@ public:
 	{
 		loadModel(path);
 	}
+	~Model()
+	{
+		for (auto& mesh : meshes)
+		{
+			mesh.ClearData();
+		}
+	}
 	
 	void Draw(Shader& shader);
 private:
