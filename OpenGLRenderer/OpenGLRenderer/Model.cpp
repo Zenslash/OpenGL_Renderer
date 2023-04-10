@@ -178,7 +178,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 			format = GL_RGBA;
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tWidth, tHeight, 0, format, GL_UNSIGNED_BYTE, texData);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, tWidth, tHeight, 0, format, GL_UNSIGNED_BYTE, texData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else

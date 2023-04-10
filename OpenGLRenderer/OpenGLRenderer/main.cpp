@@ -124,15 +124,12 @@ int main()
 	//Configuring depth buffer
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	
-	glEnable(GL_STENCIL_TEST);
-	glStencilFunc(GL_EQUAL, 1, 0xFF);
-	
 
 	//Compile shaders
 	Shader litShader("Shaders/SimpleLit.vs", "Shaders/SimpleLit.fs");
+	//TODO There is some problem with shader compilation
+	Shader vegetationShader("Shaders/VegetationTransparent.vs", "Shaders/VegetationTransparent.fs");
 	Shader lightSrcShader("Shaders/LightSource.vs", "Shaders/LightSource.fs");
-	Shader singleColor("Shaders/SingleColor.vs", "Shaders/SingleColor.fs");
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
@@ -149,11 +146,15 @@ int main()
 	};
 
 	const std::filesystem::path workDir = std::filesystem::current_path();
-	std::filesystem::path modelPath = workDir / "resources" / "models" / "backpack" / "backpack.obj";
-	Model model(modelPath.generic_string().c_str());
 
-	/*modelPath = workDir / "resources" / "models" / "light" / "light.fbx";
-	Model pointLight(modelPath.generic_string().c_str());*/
+	 std::filesystem::path modelPath = workDir / "resources" / "models" / "soldier" / "CloneDC15sWhite.obj";
+	Model soldier(modelPath.generic_string().c_str());
+
+	modelPath = workDir / "resources" / "models" / "terrain" / "terrain.obj";
+	Model floor(modelPath.generic_string().c_str());
+
+	modelPath = workDir / "resources" / "models" / "grass" / "plane.obj";
+	Model grass(modelPath.generic_string().c_str());
 
 	//Uniform vars
 	litShader.use();
@@ -284,53 +285,27 @@ int main()
 
 		// 4. use our shader program when we want to render an object
 
-		//First pass
-		glEnable(GL_DEPTH_TEST);
-		glStencilMask(0xFF);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
 		glm::mat4 local = glm::mat4(1.0f);
 		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		litShader.setMat4("model", local);
-		model.Draw(litShader);
+		//model.Draw(litShader);
+
+		soldier.Draw(litShader);
 
 		local = glm::mat4(1.0f);
-		local = glm::translate(local, glm::vec3(4.0f, 0.0f, 0.0f));
-		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		litShader.setMat4("model", local);
-		model.Draw(litShader);
+		floor.Draw(litShader);
 
-		////Second pass
-		singleColor.use();
+		vegetationShader.use();
 
-		singleColor.setMat4("view", camera.GetViewMatrix());
-		singleColor.setMat4("projection", projection);
-
-		glDisable(GL_DEPTH_TEST);
-		glStencilMask(0x00);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-
-		singleColor.setVec3("_Color", glm::vec3(0.5f, 0.8f, 1.0f));
+		vegetationShader.setMat4("view", camera.GetViewMatrix());
+		vegetationShader.setMat4("projection", projection);
+		vegetationShader.setVec3("_ViewPos", camera.cameraPos);
 
 		local = glm::mat4(1.0f);
-		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		local = glm::scale(local, glm::vec3(1.1f, 1.1f, 1.1f));
-		singleColor.setMat4("model", local);
-		model.Draw(singleColor);
-
-		local = glm::mat4(1.0f);
-		local = glm::translate(local, glm::vec3(4.0f, 0.0f, 0.0f));
-		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		local = glm::scale(local, glm::vec3(1.1f, 1.1f, 1.1f));
-		singleColor.setMat4("model", local);
-		model.Draw(singleColor);
-
-		glEnable(GL_DEPTH_TEST);
-		glStencilMask(0xFF);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-
-		////////////
+		local = glm::translate(local, glm::vec3(1.0f, -1.0f, 2.0f));
+		vegetationShader.setMat4("model", local);
+		grass.Draw(vegetationShader);
 
 		//ImGui
 		ImGui::Begin("Perfomance stats");
