@@ -125,11 +125,16 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	//Compile shaders
 	Shader litShader("Shaders/SimpleLit.vs", "Shaders/SimpleLit.fs");
 	//TODO There is some problem with shader compilation
 	Shader vegetationShader("Shaders/VegetationTransparent.vs", "Shaders/VegetationTransparent.fs");
 	Shader lightSrcShader("Shaders/LightSource.vs", "Shaders/LightSource.fs");
+	Shader postProcessShader("Shaders/PostProcess.vs", "Shaders/PostProcess.fs");
+
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
@@ -155,6 +160,30 @@ int main()
 
 	modelPath = workDir / "resources" / "models" / "grass" / "plane.obj";
 	Model grass(modelPath.generic_string().c_str());
+
+
+	//Utility
+	float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
+	};
+
+	unsigned int quadVAO, quadVBO;
+	glGenVertexArrays(1, &quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindVertexArray(quadVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	//Uniform vars
 	litShader.use();
@@ -209,6 +238,36 @@ int main()
 	litShader.setVec3("_SpotLight.specular", lightSpecular);
 	litShader.setFloat("_SpotLight.intensity", lightIntensity);
 
+	postProcessShader.use();
+	postProcessShader.setInt("_screenTexture", 0);
+
+	//Framebuffer goes here
+	unsigned int fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	unsigned int textureColorbuffer;
+	glGenTextures(1, &textureColorbuffer);
+	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+
+	unsigned int rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+	//glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer object is not complete!" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Camera stuff
 	glm::vec3 up = glm::vec3(0.0, 1.0f, 0.0f);
 	
@@ -223,6 +282,7 @@ int main()
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(wnd, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
+
 
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
@@ -241,6 +301,14 @@ int main()
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		////////////////////////////////////////////////////////////
+		//First pass
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glEnable(GL_DEPTH_TEST);
+
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Render light source
 		glm::mat4 projection = glm::mat4(1.0f);
@@ -307,6 +375,20 @@ int main()
 		vegetationShader.setMat4("model", local);
 		grass.Draw(vegetationShader);
 
+		////////////////////////////////////////////////////////////
+		//Second pass
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		postProcessShader.use();
+		glBindVertexArray(quadVAO);
+		glDisable(GL_DEPTH_TEST);
+		glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+
 		//ImGui
 		ImGui::Begin("Perfomance stats");
 		ImGui::Text((std::string("Delta Time: ") + std::to_string(deltaTime)).c_str());
@@ -325,6 +407,8 @@ int main()
 		glfwSwapBuffers(wnd);
 		glfwPollEvents();
 	}
+
+	glDeleteFramebuffers(1, &fbo);
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
