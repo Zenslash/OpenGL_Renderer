@@ -155,7 +155,7 @@ int main()
 
 	//Configuring depth buffer
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	glDepthFunc(GL_LEQUAL);
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -354,17 +354,6 @@ int main()
 		glm::mat4 projection = glm::mat4(1.0f);
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
-		//Render skybox
-		glDepthMask(GL_FALSE);
-		skyboxShader.use();
-		skyboxShader.setMat4("projection", projection);
-		skyboxShader.setMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
-
-		glBindVertexArray(skyboxVAO);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glDepthMask(GL_TRUE);
-
 		//Render light source
 		lightSrcShader.use();
 		lightSrcShader.setMat4("view", camera.GetViewMatrix());
@@ -427,7 +416,16 @@ int main()
 		vegetationShader.setMat4("model", local);
 		grass.Draw(vegetationShader);
 
+		//Render skybox
+		glDepthMask(GL_FALSE); 
+		skyboxShader.use(); 
+		skyboxShader.setMat4("projection", projection); 
+		skyboxShader.setMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix()))); 
 
+		glBindVertexArray(skyboxVAO); 
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex); 
+		glDrawArrays(GL_TRIANGLES, 0, 36); 
+		glDepthMask(GL_TRUE);
 
 		//ImGui
 		frameCount++;
