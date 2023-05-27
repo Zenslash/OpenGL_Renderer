@@ -328,6 +328,10 @@ int main()
 	ImGui_ImplGlfw_InitForOpenGL(wnd, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
+	//Perfomance metrics
+	int frameCount = 0;
+	int prevFPS = 0;
+	float prevTime = glfwGetTime();
 
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
@@ -426,8 +430,17 @@ int main()
 
 
 		//ImGui
+		frameCount++;
+		if (currentFrame - prevTime >= 1.0)
+		{
+			prevFPS = frameCount;
+			frameCount = 0;
+			prevTime = currentFrame;
+		}
+
 		ImGui::Begin("Perfomance stats");
 		ImGui::Text((std::string("Delta Time: ") + std::to_string(deltaTime)).c_str());
+		ImGui::Text((std::string("FPS: ") + std::to_string(prevFPS)).c_str());
 		ImGui::End();
 
 		ImGui::Begin("Directional light");
