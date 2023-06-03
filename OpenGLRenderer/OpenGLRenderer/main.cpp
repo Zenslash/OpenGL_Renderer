@@ -166,6 +166,7 @@ int main()
 	Shader vegetationShader("Shaders/VegetationTransparent.vs", "Shaders/VegetationTransparent.fs");
 	Shader lightSrcShader("Shaders/LightSource.vs", "Shaders/LightSource.fs");
 	Shader skyboxShader("Shaders/Skybox.vs", "Shaders/Skybox.fs");
+	Shader envMappingShader("Shaders/EnvironmentMapping.vs", "Shaders/EnvironmentMapping.fs");
 
 
 	//Light properties
@@ -399,11 +400,19 @@ int main()
 		litShader.setMat4("model", local);
 		//model.Draw(litShader);
 
-		soldier.Draw(litShader);
-
 		local = glm::mat4(1.0f);
 		litShader.setMat4("model", local);
 		floor.Draw(litShader);
+		
+		//Experiments with Environment mapping
+		envMappingShader.use();
+		envMappingShader.setMat4("view", camera.GetViewMatrix());
+		envMappingShader.setMat4("projection", projection); 
+		envMappingShader.setVec3("_ViewPos", camera.cameraPos);
+		envMappingShader.setMat4("model", glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+
+		soldier.Draw(envMappingShader);
+		
 
 		vegetationShader.use();
 
