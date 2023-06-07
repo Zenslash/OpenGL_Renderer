@@ -9,7 +9,7 @@
 #include <iostream>
 #include "stb_image.h"
 #include "Camera.h"
-#include "Model.h"
+#include "Entity.h"
 #include <filesystem>
 
 #include <glm.hpp>
@@ -186,13 +186,17 @@ int main()
 	const std::filesystem::path workDir = std::filesystem::current_path();
 
 	 std::filesystem::path modelPath = workDir / "resources" / "models" / "soldier" / "CloneDC15sWhite.obj";
-	Model soldier(modelPath.generic_string().c_str());
+	//Model soldier(modelPath.generic_string().c_str());
+	Entity soldier(modelPath.generic_string().c_str());
+	soldier.addChild(modelPath.generic_string().c_str());
+	soldier.getChild(0)->transform.setLocalPos(glm::vec3(5.0f, 0.0f, 0.0f));
+	soldier.updateSelfAndChild();
 
 	modelPath = workDir / "resources" / "models" / "terrain" / "terrain.obj";
-	Model floor(modelPath.generic_string().c_str());
+	Entity floor(modelPath.generic_string().c_str());
 
 	modelPath = workDir / "resources" / "models" / "grass" / "plane.obj";
-	Model grass(modelPath.generic_string().c_str());
+	Entity grass(modelPath.generic_string().c_str());
 
 	//Cubemap texture
 	std::vector<std::string> cubeFaces = {
@@ -394,25 +398,15 @@ int main()
 		litShader.setInt("_Material.specular", 1);
 
 		// 4. use our shader program when we want to render an object
+		soldier.transform.setLocalRotation(glm::vec3(180.0f, 180.0f, 0.0f));
+		soldier.updateSelfAndChild();
+		litShader.setMat4("model", soldier.transform.getModelMatrix());
+		soldier.Draw(litShader);
+		litShader.setMat4("model", soldier.getChild(0)->transform.getModelMatrix());
+		soldier.getChild(0)->Draw(litShader);
 
-		glm::mat4 local = glm::mat4(1.0f);
-		local = glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		litShader.setMat4("model", local);
-		//model.Draw(litShader);
-
-		local = glm::mat4(1.0f);
-		litShader.setMat4("model", local);
+		litShader.setMat4("model", floor.transform.getModelMatrix());
 		floor.Draw(litShader);
-		
-		//Experiments with Environment mapping
-		envMappingShader.use();
-		envMappingShader.setMat4("view", camera.GetViewMatrix());
-		envMappingShader.setMat4("projection", projection); 
-		envMappingShader.setVec3("_ViewPos", camera.cameraPos);
-		envMappingShader.setMat4("model", glm::rotate(local, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-
-		soldier.Draw(envMappingShader);
-		
 
 		vegetationShader.use();
 
@@ -420,9 +414,8 @@ int main()
 		vegetationShader.setMat4("projection", projection);
 		vegetationShader.setVec3("_ViewPos", camera.cameraPos);
 
-		local = glm::mat4(1.0f);
-		local = glm::translate(local, glm::vec3(1.0f, -1.0f, 2.0f));
-		vegetationShader.setMat4("model", local);
+		grass.transform.setLocalRotation(glm::vec3(90.0f, 180.0f, 0.0f));
+		vegetationShader.setMat4("model", grass.transform.getModelMatrix());
 		grass.Draw(vegetationShader);
 
 		//Render skybox
