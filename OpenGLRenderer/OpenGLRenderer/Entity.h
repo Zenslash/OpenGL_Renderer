@@ -13,6 +13,8 @@ protected:
 
 	glm::mat4 modelMatrix = glm::mat4(1.0f);
 
+	bool isDirty = true;
+
 protected:
 	glm::mat4 getLocalModelMatrix();
 
@@ -23,19 +25,27 @@ public:
 	void setLocalPos(glm::vec3 pos)
 	{
 		this->pos = pos;
+		isDirty = true;
 	}
 	void setLocalRotation(glm::vec3 rot)
 	{
 		this->eulerRot = rot;
+		isDirty = true;
 	}
 	void setLocalScale(glm::vec3 scale)
 	{
 		this->scale = scale;
+		isDirty = true;
 	}
 
 	const glm::mat4 getModelMatrix()
 	{
 		return modelMatrix;
+	}
+
+	bool IsDirty() const
+	{
+		return isDirty;
 	}
 };
 
@@ -56,24 +66,12 @@ public:
 		childrens.back()->parent = this;
 	}
 
-	void updateSelfAndChild()
-	{
-		if (parent)
-		{
-			transform.computeModelMatrix(parent->transform.getModelMatrix());
-		}
-		else
-		{
-			transform.computeModelMatrix();
-		}
-
-		for (auto& child : childrens)
-		{
-			child->updateSelfAndChild();
-		}
-	}
+	void updateSelfAndChild();
 
 	const std::unique_ptr<Entity>& getChild(int index) const;
+private:
+	void forceUpdateSelfAndChild();
+
 private:
 	std::vector<std::unique_ptr<Entity>> childrens;
 	Entity* parent = nullptr;
