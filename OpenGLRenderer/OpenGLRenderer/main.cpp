@@ -1,7 +1,3 @@
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
 
 #include <glad/glad.h>
 #include "Shader.h"
@@ -12,9 +8,10 @@
 #include "Entity.h"
 #include <filesystem>
 
+#include "ImguiLayer.h"
+
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-#include <gtc/type_ptr.hpp>
 
 void framebuffer_size_callback(GLFWwindow* wnd, int width, int height)
 {
@@ -183,11 +180,13 @@ int main()
 	glm::vec3(0.0f,  0.0f, -3.0f)
 	};
 
+	//Scene root element
+	Entity root(nullptr);
+
 	const std::filesystem::path workDir = std::filesystem::current_path();
 
 	 std::filesystem::path modelPath = workDir / "resources" / "models" / "soldier" / "CloneDC15sWhite.obj";
-	//Model soldier(modelPath.generic_string().c_str());
-	Entity soldier(modelPath.generic_string().c_str());
+	Entity soldier(modelPath.generic_string().c_str()); 
 	soldier.addChild(modelPath.generic_string().c_str());
 	soldier.getChild(0)->transform.setLocalPos(glm::vec3(5.0f, 0.0f, 0.0f));
 	soldier.updateSelfAndChild();
@@ -197,6 +196,17 @@ int main()
 
 	modelPath = workDir / "resources" / "models" / "grass" / "plane.obj";
 	Entity grass(modelPath.generic_string().c_str());
+
+	//Assign entities to root element
+	//Problem with addChild() method
+	//We cant make_unique with Entity as argument
+	//root.addChild(soldier);
+	//root.addChild(floor);
+	//root.addChild(grass);
+	//root.updateSelfAndChild();
+
+	//Scene abstraction
+	//Scene graph gui
 
 	//Cubemap texture
 	std::vector<std::string> cubeFaces = {
@@ -326,12 +336,9 @@ int main()
 	float lastFrame = 0.0f;
 
 	//Imgui setup
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(wnd, true);
-	ImGui_ImplOpenGL3_Init("#version 330");
+	ImguiLayer imguiLayer;
+	imguiLayer.Init(wnd);
+	
 
 	//Perfomance metrics
 	int frameCount = 0;
@@ -352,9 +359,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		//Imgui
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		imguiLayer.NewFrame();
 
 		glm::mat4 projection = glm::mat4(1.0f);
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
@@ -438,28 +443,15 @@ int main()
 			prevTime = currentFrame;
 		}
 
-		ImGui::Begin("Perfomance stats");
-		ImGui::Text((std::string("Delta Time: ") + std::to_string(deltaTime)).c_str());
-		ImGui::Text((std::string("FPS: ") + std::to_string(prevFPS)).c_str());
-		ImGui::End();
-
-		ImGui::Begin("Directional light");
-		ImGui::ColorEdit3("Ambient", glm::value_ptr(lightAmbient));
-		ImGui::ColorEdit3("Diffuse", glm::value_ptr(lightDiffuse));
-		ImGui::ColorEdit3("Specular", glm::value_ptr(lightSpecular));
-		ImGui::InputFloat3("Position", glm::value_ptr(lightPos));
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		imguiLayer.ShowFPS(deltaTime, prevFPS);
+		imguiLayer.ShowDirLightProperties(lightAmbient, lightDiffuse, lightSpecular, lightPos);
+		imguiLayer.Render();
 
 		glfwSwapBuffers(wnd);
 		glfwPollEvents();
 	}
 
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+	imguiLayer.Shutdown();
 
 	glfwTerminate();
 	return 0;

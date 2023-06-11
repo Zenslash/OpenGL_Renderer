@@ -15,8 +15,12 @@ class Model
 public:
 	Model(const char* path)
 	{
-		loadModel(path);
+		if (path != nullptr)
+		{
+			loadModel(path);
+		}
 	}
+
 	~Model()
 	{
 		for (auto& mesh : meshes)
