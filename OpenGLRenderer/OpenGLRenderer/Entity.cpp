@@ -23,6 +23,21 @@ void Transform::computeModelMatrix(const glm::mat4& parentModel)
 	modelMatrix = parentModel * getLocalModelMatrix();
 }
 
+void Entity::updateSelfAndChild()
+{
+	if (transform.IsDirty())
+	{
+		forceUpdateSelfAndChild();
+		return;
+	}
+
+
+	for (auto&& child : childrens)
+	{
+		child->updateSelfAndChild();
+	}
+}
+
 const std::unique_ptr<Entity>& Entity::getChild(int index) const
 {
 	if (index >= childrens.size())
@@ -31,4 +46,21 @@ const std::unique_ptr<Entity>& Entity::getChild(int index) const
 	}
 
 	return childrens[index];
+}
+
+void Entity::forceUpdateSelfAndChild()
+{
+	if (parent)
+	{
+		transform.computeModelMatrix(parent->transform.getModelMatrix());
+	}
+	else
+	{
+		transform.computeModelMatrix();
+	}
+
+	for (auto&& child : childrens)
+	{
+		child->forceUpdateSelfAndChild();
+	}
 }
