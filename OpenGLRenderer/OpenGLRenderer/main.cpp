@@ -1,7 +1,3 @@
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
 
 #include <glad/glad.h>
 #include "Shader.h"
@@ -10,6 +6,7 @@
 #include "stb_image.h"
 #include "Camera.h"
 #include "Entity.h"
+#include "ImguiLayer.h"
 #include <filesystem>
 
 #include <glm.hpp>
@@ -326,12 +323,8 @@ int main()
 	float lastFrame = 0.0f;
 
 	//Imgui setup
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(wnd, true);
-	ImGui_ImplOpenGL3_Init("#version 330");
+	ImguiLayer imgui;
+	imgui.init(wnd);
 
 	//Perfomance metrics
 	int frameCount = 0;
@@ -352,9 +345,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		//Imgui
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		imgui.newFrame();
 
 		glm::mat4 projection = glm::mat4(1.0f);
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
@@ -438,29 +429,16 @@ int main()
 			prevTime = currentFrame;
 		}
 
-		ImGui::Begin("Perfomance stats");
-		ImGui::Text((std::string("Delta Time: ") + std::to_string(deltaTime)).c_str());
-		ImGui::Text((std::string("FPS: ") + std::to_string(prevFPS)).c_str());
-		ImGui::End();
+		imgui.drawPerfomance(deltaTime, prevFPS);
+		imgui.drawDirLightProperties(lightAmbient, lightDiffuse, lightSpecular, lightPos);
 
-		ImGui::Begin("Directional light");
-		ImGui::ColorEdit3("Ambient", glm::value_ptr(lightAmbient));
-		ImGui::ColorEdit3("Diffuse", glm::value_ptr(lightDiffuse));
-		ImGui::ColorEdit3("Specular", glm::value_ptr(lightSpecular));
-		ImGui::InputFloat3("Position", glm::value_ptr(lightPos));
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		imgui.render();
 
 		glfwSwapBuffers(wnd);
 		glfwPollEvents();
 	}
 
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
-
+	imgui.shutdown();
 	glfwTerminate();
 	return 0;
 }
