@@ -158,7 +158,7 @@ int main()
 	glCullFace(GL_BACK);
 
 	//Compile shaders
-	Shader litShader("Shaders/SimpleLit.vs", "Shaders/SimpleLit.fs");
+	Shader litShader("Shaders/SimpleLit.vs", "Shaders/BlinnPhong.fs");
 	//TODO There is some problem with shader compilation
 	Shader vegetationShader("Shaders/VegetationTransparent.vs", "Shaders/VegetationTransparent.fs");
 	Shader lightSrcShader("Shaders/LightSource.vs", "Shaders/LightSource.fs");
