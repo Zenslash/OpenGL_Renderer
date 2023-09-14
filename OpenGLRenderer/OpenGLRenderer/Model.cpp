@@ -164,21 +164,23 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 
 	if (texData != nullptr)
 	{
-		GLenum format;
+		GLenum internalformat, format;
 		if (nrChannels == 1)
 		{
 			format = GL_RED;
 		}
 		else if (nrChannels == 3)
 		{
+			internalformat = GL_SRGB;
 			format = GL_RGB;
 		}
 		else
 		{
+			internalformat = GL_SRGB_ALPHA;
 			format = GL_RGBA;
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, format, tWidth, tHeight, 0, format, GL_UNSIGNED_BYTE, texData);
+		glTexImage2D(GL_TEXTURE_2D, 0, internalformat, tWidth, tHeight, 0, format, GL_UNSIGNED_BYTE, texData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
