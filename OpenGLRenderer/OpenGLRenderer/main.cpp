@@ -121,8 +121,8 @@ unsigned int loadCubemap(const std::vector<std::string>& cubeFaces)
 
 int main()
 {
-	constexpr  int width = 1024;
-	constexpr int height = 720;
+	constexpr  int width = 1920;
+	constexpr int height = 1080;
 
 	float rectangleVertices[] =
 	{
@@ -187,12 +187,13 @@ int main()
 	glm::vec3 lightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 lightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
 	float lightIntensity = 1.0f;
+	float pointLightIntensity = 2.0f;
 
 	glm::vec3 pointLightPositions[] = {
-	glm::vec3(0.7f,  0.2f,  2.0f),
-	glm::vec3(2.3f, -3.3f, -4.0f),
-	glm::vec3(-4.0f,  2.0f, -12.0f),
-	glm::vec3(0.0f,  0.0f, -3.0f)
+	glm::vec3(-1.0f,  0.5f,  0.0f),
+	glm::vec3(1.0f, 0.5f, 0.0f),
+	glm::vec3(-4.0f,  0.5f, 0.0f),
+	glm::vec3(-6.0f,  0.5f, 0.0f)
 	};
 
 	const std::filesystem::path workDir = std::filesystem::current_path();
@@ -295,41 +296,41 @@ int main()
 	litShader.setVec3("_Material.texture_diffuse1", 1.0f, 1.0f, 1.0f);
 	litShader.setVec3("_Material.texture_specular1", 0.5f, 0.5f, 0.5f);
 	litShader.setFloat("_Material.shiness", 32.0f);
-	/*litShader.setFloat("_PointLights[0].constant", 1.0f);
+	litShader.setFloat("_PointLights[0].constant", 1.0f);
 	litShader.setFloat("_PointLights[0].linear", 0.09f);
 	litShader.setFloat("_PointLights[0].quadratic", 0.032f);
 	litShader.setVec3("_PointLights[0].position", pointLightPositions[0]);
 	litShader.setVec3("_PointLights[0].ambient", lightAmbient);
-	litShader.setVec3("_PointLights[0].diffuse", lightDiffuse);
-	litShader.setVec3("_PointLights[0].specular", lightSpecular);
-	litShader.setFloat("_PointLights[0].intensity", lightIntensity);
+	litShader.setVec3("_PointLights[0].diffuse", glm::vec3(0.0f, 1.0f, 1.0f));
+	litShader.setVec3("_PointLights[0].specular", glm::vec3(0.0f, 1.0f, 1.0f));
+	litShader.setFloat("_PointLights[0].intensity", pointLightIntensity);
 
 	litShader.setFloat("_PointLights[1].constant", 1.0f);
 	litShader.setFloat("_PointLights[1].linear", 0.09f);
 	litShader.setFloat("_PointLights[1].quadratic", 0.032f);
 	litShader.setVec3("_PointLights[1].position", pointLightPositions[1]);
 	litShader.setVec3("_PointLights[1].ambient", lightAmbient);
-	litShader.setVec3("_PointLights[1].diffuse", lightDiffuse);
-	litShader.setVec3("_PointLights[1].specular", lightSpecular);
-	litShader.setFloat("_PointLights[1].intensity", lightIntensity);
+	litShader.setVec3("_PointLights[1].diffuse", glm::vec3(0.0f, 0.0f, 1.0f));
+	litShader.setVec3("_PointLights[1].specular", glm::vec3(0.0f, 0.0f, 1.0f));
+	litShader.setFloat("_PointLights[1].intensity", pointLightIntensity);
 
 	litShader.setFloat("_PointLights[2].constant", 1.0f);
 	litShader.setFloat("_PointLights[2].linear", 0.09f);
 	litShader.setFloat("_PointLights[2].quadratic", 0.032f);
 	litShader.setVec3("_PointLights[2].position", pointLightPositions[2]);
 	litShader.setVec3("_PointLights[2].ambient", lightAmbient);
-	litShader.setVec3("_PointLights[2].diffuse", lightDiffuse);
-	litShader.setVec3("_PointLights[2].specular", lightSpecular);
-	litShader.setFloat("_PointLights[2].intensity", lightIntensity);
+	litShader.setVec3("_PointLights[2].diffuse", glm::vec3(1.0f, 0.0f, 1.0f));
+	litShader.setVec3("_PointLights[2].specular", glm::vec3(1.0f, 0.0f, 1.0f));
+	litShader.setFloat("_PointLights[2].intensity", pointLightIntensity);
 
 	litShader.setFloat("_PointLights[3].constant", 1.0f);
 	litShader.setFloat("_PointLights[3].linear", 0.09f);
 	litShader.setFloat("_PointLights[3].quadratic", 0.032f);
 	litShader.setVec3("_PointLights[3].position", pointLightPositions[3]);
 	litShader.setVec3("_PointLights[3].ambient", lightAmbient);
-	litShader.setVec3("_PointLights[3].diffuse", lightDiffuse);
-	litShader.setVec3("_PointLights[3].specular", lightSpecular);
-	litShader.setFloat("_PointLights[3].intensity", lightIntensity);*/
+	litShader.setVec3("_PointLights[3].diffuse", glm::vec3(1.0f, 0.0f, 0.0f));
+	litShader.setVec3("_PointLights[3].specular", glm::vec3(1.0f, 0.0f, 0.0f));
+	litShader.setFloat("_PointLights[3].intensity", pointLightIntensity);
 	litShader.setInt("albedo", 0);
 
 	//Spot light
@@ -415,8 +416,8 @@ int main()
 		lightSrcShader.setMat4("projection", projection);
 		lightSrcShader.setVec3("_LightColor", lightDiffuse);
 
-
-		/*for (int i = 0; i < 4; i++)
+		/*
+		for (int i = 0; i < 4; i++)
 		{
 			glm::mat4 lightModel = glm::mat4(1.0f);
 			lightModel = glm::translate(lightModel, pointLightPositions[i]);
@@ -424,7 +425,8 @@ int main()
 
 			lightSrcShader.setMat4("model", lightModel);
 			pointLight.Draw(lightSrcShader);
-		}*/
+		}
+		*/
 		
 		//Render models
 		litShader.use();
@@ -464,9 +466,14 @@ int main()
 		vegetationShader.setMat4("projection", projection);
 		vegetationShader.setVec3("_ViewPos", camera.cameraPos);
 
-		grass.transform.setLocalRotation(glm::vec3(90.0f, 180.0f, 0.0f));
-		vegetationShader.setMat4("model", grass.transform.getModelMatrix());
-		grass.Draw(vegetationShader);
+		grass.transform.setLocalRotation(glm::vec3(0.0f, 270.0f, 0.0f));
+		for (int i = 0; i < 10; i++)
+		{
+			grass.transform.setLocalPos(glm::vec3(-i + 5, -1.0f, -i));
+			grass.updateSelfAndChild();
+			vegetationShader.setMat4("model", grass.transform.getModelMatrix());
+			grass.Draw(vegetationShader);
+		}
 
 		//Render skybox
 		glDepthMask(GL_FALSE); 
