@@ -119,6 +119,8 @@ unsigned int loadCubemap(const std::vector<std::string>& cubeFaces)
 	return cubemapID;
 }
 
+void DrawGeometry(Entity& soldier, Entity& floor, Shader& litShader);
+
 int main()
 {
 	constexpr  int width = 1920;
@@ -176,6 +178,7 @@ int main()
 	Shader skyboxShader("Shaders/Skybox.vs", "Shaders/Skybox.fs");
 	Shader envMappingShader("Shaders/EnvironmentMapping.vs", "Shaders/EnvironmentMapping.fs");
 	Shader framebufferShader("Shaders/Framebuffer.vs", "Shaders/Framebuffer.fs");
+	Shader depthShader("Shaders/SimpleDepthShader.vs", "Shaders/SimpleDepthShader.fs");
 
 	framebufferShader.use();
 	framebufferShader.setBool("screenTex", 0);
@@ -387,6 +390,26 @@ int main()
 		std::cout << "Framebuffer error: " << fboStatus << std::endl;
 	}
 
+	//Depth map framebuffer
+	unsigned int depthFBO;
+	glGenFramebuffers(1, &depthFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	unsigned int depthMap;
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
 	{
@@ -396,6 +419,31 @@ int main()
 
 		process_input(wnd, &camera, deltaTime);
 
+		//first pass
+		//render depth map
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+
+		//configure shaders
+		float nearPlane = 1.0f, farPlane = 7.5f;
+		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+		glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+								glm::vec3(0.0f, 0.0f, 0.0f),
+								glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+		depthShader.use();
+		depthShader.setMat4("lightSpace", lightSpaceMatrix);
+
+		//draw scene
+		DrawGeometry(soldier, floor, depthShader);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//second pass
+		//render normal scene
+		glViewport(0, 0, width, height);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
@@ -450,15 +498,7 @@ int main()
 		litShader.setInt("_Material.specular", 1);
 
 		// 4. use our shader program when we want to render an object
-		soldier.transform.setLocalRotation(glm::vec3(180.0f, 180.0f, 0.0f));
-		soldier.updateSelfAndChild();
-		litShader.setMat4("model", soldier.transform.getModelMatrix());
-		soldier.Draw(litShader);
-		litShader.setMat4("model", soldier.getChild(0)->transform.getModelMatrix());
-		soldier.getChild(0)->Draw(litShader);
-
-		litShader.setMat4("model", floor.transform.getModelMatrix());
-		floor.Draw(litShader);
+		DrawGeometry(soldier, floor, litShader);
 
 		vegetationShader.use();
 
@@ -506,7 +546,7 @@ int main()
 		glBindVertexArray(rectVAO);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(wnd);
@@ -516,4 +556,17 @@ int main()
 	imgui.shutdown();
 	glfwTerminate();
 	return 0;
+}
+
+void DrawGeometry(Entity& soldier, Entity& floor, Shader& shader)
+{
+	soldier.transform.setLocalRotation(glm::vec3(180.0f, 180.0f, 0.0f));
+	soldier.updateSelfAndChild();
+	shader.setMat4("model", soldier.transform.getModelMatrix());
+	soldier.Draw(shader);
+	shader.setMat4("model", soldier.getChild(0)->transform.getModelMatrix());
+	soldier.getChild(0)->Draw(shader);
+
+	shader.setMat4("model", floor.transform.getModelMatrix());
+	floor.Draw(shader);
 }
