@@ -185,7 +185,7 @@ int main()
 
 
 	//Light properties
-	glm::vec3 lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
+	glm::vec3 lightPos = glm::vec3(1.2f, -4.0f, 2.0f);
 	glm::vec3 lightAmbient = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 lightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 lightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -428,11 +428,12 @@ int main()
 		glEnable(GL_CULL_FACE);
 
 		//configure shaders
-		float nearPlane = 1.0f, farPlane = 7.5f;
+		float nearPlane = 0.01f, farPlane = 8.5f;
 		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-		glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+		//For some reason I need use reversed world up vector
+		glm::mat4 lightView = glm::lookAt(lightPos,
 								glm::vec3(0.0f, 0.0f, 0.0f),
-								glm::vec3(0.0f, 1.0f, 0.0f));
+								glm::vec3(0.0f, -1.0f, 0.0f));
 		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 		depthShader.use();
 		depthShader.setMat4("lightSpace", lightSpaceMatrix);
