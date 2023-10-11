@@ -172,7 +172,7 @@ int main()
 	glCullFace(GL_BACK);
 
 	//Compile shaders
-	Shader litShader("Shaders/SimpleLit.vs", "Shaders/BlinnPhong.fs");
+	Shader litShader("Shaders/ShadowBlinnPhong.vs", "Shaders/ShadowBlinnPhong.fs");
 	Shader vegetationShader("Shaders/VegetationTransparent.vs", "Shaders/VegetationTransparent.fs");
 	Shader lightSrcShader("Shaders/LightSource.vs", "Shaders/LightSource.fs");
 	Shader skyboxShader("Shaders/Skybox.vs", "Shaders/Skybox.fs");
@@ -186,7 +186,7 @@ int main()
 
 	//Light properties
 	glm::vec3 lightPos = glm::vec3(1.2f, -4.0f, 2.0f);
-	glm::vec3 lightAmbient = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 lightAmbient = glm::vec3(0.5f, 0.5f, 0.5f);
 	glm::vec3 lightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 lightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
 	float lightIntensity = 1.0f;
@@ -205,7 +205,7 @@ int main()
 	//Model soldier(modelPath.generic_string().c_str());
 	Entity soldier(modelPath.generic_string().c_str());
 	soldier.addChild(modelPath.generic_string().c_str());
-	soldier.getChild(0)->transform.setLocalPos(glm::vec3(5.0f, 0.0f, 0.0f));
+	soldier.getChild(0)->transform.setLocalPos(glm::vec3(5.0f, 0.1f, 0.0f));
 	soldier.updateSelfAndChild();
 
 	modelPath = workDir / "resources" / "models" / "terrain" / "terrain.obj";
@@ -439,7 +439,9 @@ int main()
 		depthShader.setMat4("lightSpace", lightSpaceMatrix);
 
 		//draw scene
+		glCullFace(GL_FRONT);
 		DrawGeometry(soldier, floor, depthShader);
+		glCullFace(GL_BACK);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		//second pass
@@ -481,7 +483,8 @@ int main()
 		litShader.use();
 
 		litShader.setMat4("view", camera.GetViewMatrix());
-		litShader.setMat4("projection", projection);
+		litShader.setMat4("projection", projection); 
+		litShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		litShader.setVec3("_ViewPos", camera.cameraPos);
 		//litShader.setVec3("_Light.position", lightModel * glm::vec4(lightPos, 1.0));
 		litShader.setVec3("_Light.position", camera.cameraPos);
@@ -497,6 +500,10 @@ int main()
 
 		litShader.setInt("_Material.diffuse", 0);
 		litShader.setInt("_Material.specular", 1);
+		litShader.setInt("shadowMap", 4);
+
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
 
 		// 4. use our shader program when we want to render an object
 		DrawGeometry(soldier, floor, litShader);
@@ -547,7 +554,7 @@ int main()
 		glBindVertexArray(rectVAO);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glBindTexture(GL_TEXTURE_2D, framebufferTexture);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(wnd);

@@ -88,11 +88,11 @@ void main()
     //Point lights
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
     {
-        //result += CalcPointLight(_PointLights[i], normal, WorldPos, viewDir, albedo);
+        result += CalcPointLight(_PointLights[i], normal, WorldPos, viewDir, albedo);
     }
 
     //Spot Light
-    result += CalcSpotLight(_SpotLight, normal, albedo, viewDir);
+    //result += CalcSpotLight(_SpotLight, normal, albedo, viewDir);
 
     FragColor = vec4(result, 1.0);
 }

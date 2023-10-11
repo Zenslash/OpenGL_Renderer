@@ -51,17 +51,21 @@ struct SpotLight
 
 #define NR_POINT_LIGHTS 4
 uniform PointLight _PointLights[NR_POINT_LIGHTS];
-
 uniform SpotLight _SpotLight;
 
 out vec4 FragColor;
-in vec3 Normal;
-in vec3 WorldPos;
-in vec2 TexCoord;
+in VS_OUT
+{
+    vec3 Normal;
+    vec3 WorldPos;
+    vec2 TexCoord;
+    vec4 FragPosLightSpace;
+} fs_in;
 
 uniform DirLight _DirLight;
 uniform Material _Material;
 uniform vec3 _ViewPos;
+uniform sampler2D shadowMap;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 albedo);
@@ -76,24 +80,46 @@ float LinearizeDepth(float depth)
     return (2.0 * near * far) / (far + near - z * (far - near));	
 }
 
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+{
+    //Perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    //Tranform to [0, 1] range
+    projCoords = projCoords * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
+
 void main()
 {
-    vec3 albedo = vec3(texture(_Material.texture_diffuse1, TexCoord));
-    vec3 viewDir = normalize(_ViewPos - WorldPos);
-    vec3 normal = normalize(Normal);
+    vec3 albedo = vec3(texture(_Material.texture_diffuse1, fs_in.TexCoord));
+    vec3 viewDir = normalize(_ViewPos - fs_in.WorldPos);
+    vec3 normal = normalize(fs_in.Normal);
     
     //Directional Light
     vec3 result = CalcDirLight(_DirLight, normal, viewDir, albedo);
+    vec3 ambient = _DirLight.ambient * albedo;
 
     //Point lights
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
     {
-        result += CalcPointLight(_PointLights[i], normal, WorldPos, viewDir, albedo);
+        //result += CalcPointLight(_PointLights[i], normal, fs_in.WorldPos, viewDir, albedo);
     }
 
     //Spot Light
     //result += CalcSpotLight(_SpotLight, normal, albedo, viewDir);
 
+    //Shadow calculation
+    vec3 lightDir = normalize(-_DirLight.direction);
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace, normal, lightDir);
+    result = (ambient + (1.0 - shadow) * result);
+    
     FragColor = vec4(result, 1.0);
 }
 
@@ -107,15 +133,16 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo)
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(viewDir, halfwayDir), 0.0), _Material.shiness);
     //Combine result
-    vec3 ambient = light.ambient * albedo;
+    //vec3 ambient = light.ambient * albedo;
     vec3 diffuse = light.diffuse * diff * albedo;
-    vec3 specular = (spec * vec3(texture(_Material.texture_specular1, TexCoord))) * light.specular;
-    return (ambient + diffuse + specular);
+    vec3 specular = (spec * vec3(texture(_Material.texture_specular1, fs_in.TexCoord))) * light.specular;
+    //return (ambient + diffuse + specular);
+    return (diffuse + specular);
 }
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 albedo)
 {
-    vec3 lightDir = normalize(WorldPos - light.position);
+    vec3 lightDir = normalize(fs_in.WorldPos - light.position);
 
     //diffuse
     float diff = max(dot(normal, -lightDir), 0.0f);
@@ -123,19 +150,19 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(viewDir, halfwayDir), 0.0), _Material.shiness);
     //attenuation
-    float distance = length(WorldPos - light.position);
+    float distance = length(fs_in.WorldPos - light.position);
     float attenuation = 1.0 / (light.constant + light.linear * distance +
                                     light.quadratic * (distance * distance));
     //combine results
-    vec3 ambient = light.ambient * albedo * attenuation;
     vec3 diffuse = light.diffuse * diff * albedo * attenuation * light.intensity;
-    vec3 specular = (spec * vec3(texture(_Material.texture_specular1, TexCoord))) * light.specular * attenuation * light.intensity;
-    return (ambient + diffuse + specular);
+    vec3 specular = (spec * vec3(texture(_Material.texture_specular1, fs_in.TexCoord))) * light.specular * attenuation * light.intensity;
+    //return (ambient + diffuse + specular);
+    return (diffuse + specular);
 }
 
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 albedo, vec3 viewDir)
 {
-    vec3 lightDir = normalize(WorldPos - light.position);
+    vec3 lightDir = normalize(fs_in.WorldPos - light.position);
     float theta = dot(light.direction, normalize(lightDir));
     float epsilon = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
@@ -151,7 +178,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 albedo, vec3 viewDir)
         float spec = pow(max(dot(viewDir, halfwayDir), 0.0), _Material.shiness);
 
         vec3 diffuse = light.diffuse * diff * albedo * intensity;
-        vec3 specular = (spec * vec3(texture(_Material.texture_specular1, TexCoord))) * light.specular * intensity;
+        vec3 specular = (spec * vec3(texture(_Material.texture_specular1, fs_in.TexCoord))) * light.specular * intensity;
 
         return (ambient + diffuse + specular);
     }

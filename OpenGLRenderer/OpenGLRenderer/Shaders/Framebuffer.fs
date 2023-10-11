@@ -7,12 +7,13 @@ uniform sampler2D screenTex;
 
 void main()
 {
-    //FragColor = texture(screenTex, texCoord);
+    FragColor = texture(screenTex, texCoord);
 
     //Gamma correction
-    //float gamma = 2.2;
-    //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
+    float gamma = 2.2;
+    FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 
-    float depthValue = texture(screenTex, texCoord).r;
-    FragColor = vec4(vec3(depthValue), 1.0);
+    //Depth map
+    //float depthValue = texture(screenTex, texCoord).r;
+    //FragColor = vec4(vec3(depthValue), 1.0);
 }
