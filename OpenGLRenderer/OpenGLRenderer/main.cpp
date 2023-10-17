@@ -121,6 +121,9 @@ unsigned int loadCubemap(const std::vector<std::string>& cubeFaces)
 
 void DrawGeometry(Entity& soldier, Entity& floor, Shader& litShader);
 
+void DrawVegetation(Entity& grass, Shader& vegetationShader);
+
+
 int main()
 {
 	constexpr  int width = 1920;
@@ -395,7 +398,7 @@ int main()
 	glGenFramebuffers(1, &depthFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 	unsigned int depthMap;
 	glGenTextures(1, &depthMap);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -407,10 +410,28 @@ int main()
 	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
+	unsigned int depthCubemap;
+	glGenTextures(1, &depthCubemap);
+	
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+	for (int i = 0; i < 6; i++)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+			SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	
 
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
@@ -425,6 +446,7 @@ int main()
 		//render depth map
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0); 
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
@@ -440,13 +462,24 @@ int main()
 		depthShader.use();
 		depthShader.setMat4("lightSpace", lightSpaceMatrix);
 
-		//draw scene
+		//directional light pass
 		glCullFace(GL_FRONT);
 		DrawGeometry(soldier, floor, depthShader);
 		glCullFace(GL_BACK);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//second pass
+
+		//point light pass
+		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+		glClear(GL_DEPTH_BUFFER_BIT); 
+
+		glCullFace(GL_FRONT); 
+		//DrawGeometry(soldier, floor, depthShader);
+		glCullFace(GL_BACK); 
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		//render normal scene
 		glViewport(0, 0, width, height);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -516,14 +549,7 @@ int main()
 		vegetationShader.setMat4("projection", projection);
 		vegetationShader.setVec3("_ViewPos", camera.cameraPos);
 
-		grass.transform.setLocalRotation(glm::vec3(0.0f, 270.0f, 0.0f));
-		for (int i = 0; i < 10; i++)
-		{
-			grass.transform.setLocalPos(glm::vec3(-i + 5, -1.0f, -i));
-			grass.updateSelfAndChild();
-			vegetationShader.setMat4("model", grass.transform.getModelMatrix());
-			grass.Draw(vegetationShader);
-		}
+		DrawVegetation(grass, vegetationShader);
 
 		//Render skybox
 		glDepthMask(GL_FALSE); 
@@ -579,4 +605,16 @@ void DrawGeometry(Entity& soldier, Entity& floor, Shader& shader)
 
 	shader.setMat4("model", floor.transform.getModelMatrix());
 	floor.Draw(shader);
+}
+
+void DrawVegetation(Entity& grass, Shader& shader)
+{
+	grass.transform.setLocalRotation(glm::vec3(0.0f, 270.0f, 0.0f));
+	for (int i = 0; i < 10; i++)
+	{
+		grass.transform.setLocalPos(glm::vec3(-i + 5, -1.0f, -i));
+		grass.updateSelfAndChild();
+		shader.setMat4("model", grass.transform.getModelMatrix());
+		grass.Draw(shader);
+	}
 }
