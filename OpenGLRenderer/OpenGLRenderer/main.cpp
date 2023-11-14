@@ -8,6 +8,7 @@
 #include "Entity.h"
 #include "ImguiLayer.h"
 #include <filesystem>
+#include "Light.h"
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -410,6 +411,7 @@ int main()
 	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
+	//Init depth cubemap
 	unsigned int depthCubemap;
 	glGenTextures(1, &depthCubemap);
 	
@@ -431,7 +433,8 @@ int main()
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	
+	//Lights
+	Light dirLight(-10.0f, 10.0f, -10.0f, 10.0f, 0.01f, 8.5f, lightPos);
 
 	//Game loop
 	while(!glfwWindowShouldClose(wnd))
@@ -452,15 +455,8 @@ int main()
 		glEnable(GL_CULL_FACE);
 
 		//configure shaders
-		float nearPlane = 0.01f, farPlane = 8.5f;
-		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
-		//For some reason I need use reversed world up vector
-		glm::mat4 lightView = glm::lookAt(lightPos,
-								glm::vec3(0.0f, 0.0f, 0.0f),
-								glm::vec3(0.0f, -1.0f, 0.0f));
-		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 		depthShader.use();
-		depthShader.setMat4("lightSpace", lightSpaceMatrix);
+		depthShader.setMat4("lightSpace", dirLight.getWorldToClip());
 
 		//directional light pass
 		glCullFace(GL_FRONT);
@@ -519,7 +515,7 @@ int main()
 
 		litShader.setMat4("view", camera.GetViewMatrix());
 		litShader.setMat4("projection", projection); 
-		litShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		litShader.setMat4("lightSpaceMatrix", dirLight.getWorldToClip());
 		litShader.setVec3("_ViewPos", camera.cameraPos);
 		//litShader.setVec3("_Light.position", lightModel * glm::vec4(lightPos, 1.0));
 		litShader.setVec3("_Light.position", camera.cameraPos);
