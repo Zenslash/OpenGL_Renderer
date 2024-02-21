@@ -1,18 +1,23 @@
 
 #include <glad/glad.h>
-#include "Shader.h"
 #include <GLFW/glfw3.h>
+
 #include <iostream>
-#include "stb_image.h"
-#include "Camera.h"
-#include "Entity.h"
-#include "ImguiLayer.h"
 #include <filesystem>
-#include "Light.h"
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
+
+#include "stb_image.h"
+
+#include "Camera.h"
+#include "Entity.h"
+#include "ImguiLayer.h"
+#include "Light.h"
+#include "Shader.h"
+#include "Skybox.h"
+
 
 void framebuffer_size_callback(GLFWwindow* wnd, int width, int height)
 {
@@ -88,40 +93,7 @@ void mouse_callback(GLFWwindow* wnd, double xpos, double ypos)
 
 unsigned int loadTexture(const char* path);
 
-unsigned int loadCubemap(const std::vector<std::string>& cubeFaces)
-{
-	unsigned int cubemapID; 
-	glGenTextures(1, &cubemapID); 
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-
-	int texWidth, texHeight, nrChannels;
-	unsigned char* texData;
-	for (unsigned int i = 0; i < cubeFaces.size(); i++) 
-	{
-		texData = stbi_load(cubeFaces[i].c_str(), &texWidth, &texHeight, &nrChannels, 0);
-		if (texData)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
-			stbi_image_free(texData);
-		}
-		else
-		{
-			std::cout << "Cubemap texture loading failed at path: " + cubeFaces[i] << std::endl;
-			stbi_image_free(texData); 
-		}
-	}
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	return cubemapID;
-}
-
 void DrawGeometry(Entity& soldier, Entity& floor, Shader& litShader);
-
 void DrawVegetation(Entity& grass, Shader& vegetationShader);
 
 
@@ -218,72 +190,6 @@ int main()
 	modelPath = workDir / "resources" / "models" / "grass" / "plane.obj";
 	Entity grass(modelPath.generic_string().c_str());
 
-	//Cubemap texture
-	std::vector<std::string> cubeFaces = {
-		"resources/textures/skybox/right.jpg",
-		"resources/textures/skybox/left.jpg",
-		"resources/textures/skybox/bottom.jpg",
-		"resources/textures/skybox/top.jpg",
-		"resources/textures/skybox/front.jpg",
-		"resources/textures/skybox/back.jpg"
-	};
-	unsigned int cubemapTex = loadCubemap(cubeFaces);
-
-	float skyboxVertices[] = {
-		// positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
-
-		-1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
-
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f
-	};
-	unsigned int skyboxVAO, skyboxVBO;
-	glGenVertexArrays(1, &skyboxVAO);
-	glGenBuffers(1, &skyboxVBO);
-	glBindVertexArray(skyboxVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices[0], GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
 	//Rectangle VAO
 	unsigned int rectVAO, rectVBO;
 	glGenVertexArrays(1, &rectVAO);
@@ -350,6 +256,8 @@ int main()
 	litShader.setVec3("_SpotLight.specular", lightSpecular);
 	litShader.setFloat("_SpotLight.intensity", lightIntensity);
 
+	//Skybox
+	std::unique_ptr<Skybox> skybox = std::make_unique<Skybox>();
 
 	//Camera stuff
 	glm::vec3 up = glm::vec3(0.0, 1.0f, 0.0f);
@@ -481,6 +389,7 @@ int main()
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
 
 		//Rendering here
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -493,10 +402,10 @@ int main()
 		projection = glm::perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
 		//Render light source
-		lightSrcShader.use();
+		/*lightSrcShader.use();
 		lightSrcShader.setMat4("view", camera.GetViewMatrix());
 		lightSrcShader.setMat4("projection", projection);
-		lightSrcShader.setVec3("_LightColor", lightDiffuse);
+		lightSrcShader.setVec3("_LightColor", lightDiffuse);*/
 
 		/*
 		for (int i = 0; i < 4; i++)
@@ -548,15 +457,7 @@ int main()
 		DrawVegetation(grass, vegetationShader);
 
 		//Render skybox
-		glDepthMask(GL_FALSE); 
-		skyboxShader.use(); 
-		skyboxShader.setMat4("projection", projection); 
-		skyboxShader.setMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix()))); 
-
-		glBindVertexArray(skyboxVAO); 
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex); 
-		glDrawArrays(GL_TRIANGLES, 0, 36); 
-		glDepthMask(GL_TRUE);
+		skybox->Draw(projection, glm::mat4(glm::mat3(camera.GetViewMatrix())));
 
 		//ImGui
 		frameCount++;
